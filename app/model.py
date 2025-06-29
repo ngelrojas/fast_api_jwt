@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
 
+
 class PostSchema(BaseModel):
     id: int = Field(default=None)
     title: str = Field(...)
@@ -9,9 +10,10 @@ class PostSchema(BaseModel):
         json_schema_extra = {
             "example": {
                 "title": "Securing FastAPI application with JWT",
-                "content": "In this tutorial, you'll learn how to secure your application with JWT."
+                "content": "In this tutorial, you'll learn how to secure your application with JWT.",
             }
         }
+
 
 class UserSchema(BaseModel):
     full_name: str = Field(...)
@@ -23,9 +25,10 @@ class UserSchema(BaseModel):
             "example": {
                 "full_name": "angel rojas",
                 "email": "angel@rojas.com",
-                "password": "123456"
+                "password": "123456",
             }
         }
+
 
 class UserLoginSchema(BaseModel):
     email: EmailStr = Field(...)
@@ -33,8 +36,5 @@ class UserLoginSchema(BaseModel):
 
     class Config:
         json_schema_extra = {
-            "example": {
-                "email": "angel@rojas.com",
-                "password": "123456"
-            }
+            "example": {"email": "angel@rojas.com", "password": "123456"}
         }
