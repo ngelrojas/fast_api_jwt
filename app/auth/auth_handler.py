@@ -1,11 +1,11 @@
 import time
+import os
 from typing import Dict
 
 import jwt
-from decouple import config
 
-JWT_SECRET = config("secret")
-JWT_ALGORITHM = config("algorithm")
+JWT_SECRET = os.getenv("SECRET")
+JWT_ALGORITHM = os.getenv("ALGORITHM")
 
 
 def token_response(token: str):
@@ -28,5 +28,5 @@ def decode_jwt(token: str) -> dict:
     try:
         decode_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return decode_token if decode_token["expires"] >= time.time() else None
-    except:
-        return {}
+    except jwt.ExpiredSignatureError as e:
+        return {"error": e.message}
