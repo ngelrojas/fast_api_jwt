@@ -1,0 +1,24 @@
+name: CI/CD Pipeline Productions
+
+on:
+  push:
+    branches: ["master"]
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+  security-events: write
+  actions: read
+  checks: write
+  issues: write
+
+jobs:
+  build_fast_api:
+    runs-on: ubuntu-latest
+    environment: prd
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build FAST API
+        run: |
+          echo "run fine!"
