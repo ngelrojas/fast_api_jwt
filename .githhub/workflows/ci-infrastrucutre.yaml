@@ -1,0 +1,43 @@
+name: CI/CD Provisioning Infrastructure
+
+on:
+  workflow_dispatch:
+
+jobs:
+  permissions:
+    name: Provisioning Permissions
+    runs-on: ubuntu-latest
+    needs: backend-infrastructure
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          sts: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+
+      - name: Permissions Format check and auto-fix
+        uses: ./.github/workflows/tf-check.yaml
+        with:
+          working-directory: terraform/permissions
+
+      - name: Provision Permissions Initial Setup
+        working-directory: terraform/permissions
+        run: terraform init -input=false -no-color
+
+      - name: Provision Permissions Plan
+        working-directory: terraform/permissions
+        run: terraform plan -out=tfplan
+
+      - name: Provision Permissions Apply
+        working-directory: terraform/permissions
+        run: terraform apply -auto-approve
