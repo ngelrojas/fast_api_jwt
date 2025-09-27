@@ -22,7 +22,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
-          sts: ${{ secrets.AWS_STS }}
+          audience: ${{ secrets.AWS_STS }}
           role-session-name: GitHubActions-${{github.run_id}}
 
       - name: Backend Infrastructure Format check and auto-fix
