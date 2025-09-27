@@ -34,10 +34,10 @@ jobs:
           audience: ${{ secrets.AWS_STS }}
           role-session-name: GitHubActions-${{github.run_id}}
 
-      - name: Backend Infrastructure Format check and auto-fix
-        uses: ./.github/workflows/tf-check.yaml
+      - name: Terraform Format Check
+        uses: dflook/terraform-fmt-check@v1
         with:
-          working-directory: terraform/backend-infra
+          path: terraform/backend-infra
 
       - name: Provision Backend Infrastructure Initial Setup
         working-directory: terraform/backend-infra
