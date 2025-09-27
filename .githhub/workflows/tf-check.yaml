@@ -1,0 +1,40 @@
+name: Terraform Check Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      working-directory:
+        description: 'The working directory for Terraform (e.g., terraform/backend-infra)'
+        required: true
+        type: string
+
+jobs:
+  terraform-check:
+    name: Terraform Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Format check and auto-fix
+        run: |
+          echo "Checking and fixing Terraform format..."
+          if ! terraform fmt -check -recursive; then
+            echo "Terraform files are not properly formatted. Auto-formatting..."
+            terraform fmt -recursive
+            echo "Files have been formated. Here are changes:"
+            git diff --name-only || echo "no changes by git diff"
+          else
+            echo "All Terraform files are properly formatted."
+          fi
+        working-directory: ${{ inputs.working-directory }}
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: ${{ inputs.working-directory }}
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ inputs.working-directory }}
+      - name: Terraform Scan
+        uses: aquasecurity/tfsec-github-action@v1.0.0
+        with:
+          working_directory: ${{ inputs.working-directory }}

@@ -1,0 +1,43 @@
+name: CI/CD Provisioning Backend Infrastructure
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backend-infrastructure:
+    name: Backend Infrastructure
+    runs-on: ubuntu-latest
+    environment: prd
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          sts: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+
+      - name: Backend Infrastructure Format check and auto-fix
+        uses: ./.github/workflows/tf-check.yaml
+        with:
+          working-directory: terraform/backend-infra
+
+      - name: Provision Backend Infrastructure Initial Setup
+        working-directory: terraform/backend-infra
+        run: terraform init -input=false -no-color
+
+      - name: Provision Backend Infrastructure Plan
+        working-directory: terraform/backend-infra
+        run: terraform plan -out=tfplan
+
+      - name: Provision Provision Backend Infrastructure Apply
+        working-directory: terraform/backend-infra
+        run: terraform apply -auto-approve
