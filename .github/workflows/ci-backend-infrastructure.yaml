@@ -49,10 +49,4 @@ jobs:
 
       - name: Provision Provision Backend Infrastructure Apply
         working-directory: terraform/backend-infra
-        run: |
-          set -e
-          terraform apply -auto-approve || {
-            terraform import aws_s3_bucket.terraform-state tf-state-lock-bucket-prod || true
-            terraform import aws_dynamodb_table.terraform-lock terraform-locks-fast-api-jwt || true
-            terraform apply -auto-approve
-          }
+        run: terraform apply -auto-approve
