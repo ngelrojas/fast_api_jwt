@@ -1,27 +1,40 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "5.81.0"
-    }
-  }
+data "aws_vpc" "default" {
+  default = true
 }
 locals {
-  docker_user_data = base64decode(templatefile("user_data.sh", {
+  docker_user_data = templatefile("user_data.sh", {
     region = var.aws_region
     app_data_bucket = var.storage_files_csv.bucket
-  }))
+  })
 }
 resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
   policy_arn = var.policy_arn
   role       = var.ec2_ssm_role.name
 }
+resource "aws_security_group" "fast_api_jwt_sg" {
+  name        = "fast-api-jwt-sg"
+  description = "Allow SSH and fast api jwt traffic"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 resource "aws_instance" "fast_api_jwt" {
   ami = var.ec2_ami
   instance_type = var.ec2_instance_type
   subnet_id = ""
-  vpc_security_group_ids = []
-  iam_instance_profile = ""
+  security_groups = [aws_security_group.fast_api_jwt_sg.name]
 
   user_data = local.docker_user_data
 
