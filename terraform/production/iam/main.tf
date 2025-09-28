@@ -36,7 +36,7 @@ resource "aws_iam_role" "self_hosted_runner" {
 }
 
 resource "aws_iam_role_policy" "self_hosted_runner_policy" {
-  name = "self-hosted-github-actions-runner-policy"
+  name = var.self_hosted_role
   role = aws_iam_role.self_hosted_runner.id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -58,6 +58,6 @@ resource "aws_iam_role_policy" "self_hosted_runner_policy" {
 }
 
 resource "aws_iam_instance_profile" "self_hosted_runner_profile" {
-  name = "self-hosted-github-actions-runner-profile"
+  name = var.self_hosted_role
   role = aws_iam_role.self_hosted_runner.name
 }
