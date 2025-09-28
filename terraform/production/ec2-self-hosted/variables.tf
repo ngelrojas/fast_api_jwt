@@ -1,16 +1,16 @@
 # Data
-data "terraform_remote_state" "s3_storage" {
-  backend = "local"
-    config = {
-        path = "../s3-storage/terraform.tfstate"
-    }
-}
-data "terraform_remote_state" "iam" {
-  backend = "local"
-    config = {
-        path = "../iam/terraform.tfstate"
-    }
-}
+# data "terraform_remote_state" "s3_storage" {
+#   backend = "local"
+#     config = {
+#         path = "../s3-storage/terraform.tfstate"
+#     }
+# }
+# data "terraform_remote_state" "iam" {
+#   backend = "local"
+#     config = {
+#         path = "../iam/terraform.tfstate"
+#     }
+# }
 # Variables
 variable "aws_region" {
   description = "AWS region to deploy EC2 instance"
@@ -48,28 +48,33 @@ variable "github_token" {
 }
 
 variable "storage_files_csv" {
-  default = data.terraform_remote_state.s3_storage.outputs.storage_files_csv
+  description = "S3 bucket details for storage files CSV"
+  type = object({
+    bucket = string
+    arn    = string
+  })
 }
 variable "ec2_tag_name" {
-    description = "Tag name for the EC2 instance"
-    type        = string
-    default     = "github-actions-self-hosted"
+  description = "Tag name for the EC2 instance"
+  type        = string
+  default     = "github-actions-self-hosted"
 }
 variable "service_name" {
-    description = "Service name for tagging"
-    type        = string
-    default     = "github-actions-runner"
+  description = "Service name for tagging"
+  type        = string
+  default     = "github-actions-runner"
 }
 variable "environment" {
-    description = "Environment for tagging"
-    type        = string
-    default     = "production"
+  description = "Environment for tagging"
+  type        = string
+  default     = "production"
 }
 variable "project_name" {
-    description = "Project name for tagging"
-    type        = string
-    default     = "fast-api-jwt"
+  description = "Project name for tagging"
+  type        = string
+  default     = "fast-api-jwt"
 }
 variable "self_hosted_runner_profile" {
-  default = data.terraform_remote_state.iam.outputs.self_hosted_runner_profile
+  description = "IAM instance profile for the self-hosted GitHub Actions runner"
+  type        = string
 }

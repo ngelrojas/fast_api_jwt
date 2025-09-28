@@ -12,11 +12,11 @@ data "aws_ami" "ubuntu" {
 }
 
 locals {
-  docker_user_data = templatefile("self_hosted.sh", {
-    region           = var.aws_region
-    app_data_bucket  = var.storage_files_csv.bucket
-    github_token     = var.github_token
-    github_repo      = var.github_repo
+  docker_user_data = templatefile("${path.module}/self_hosted.sh", {
+    region          = var.aws_region
+    app_data_bucket = var.storage_files_csv.bucket
+    github_token    = var.github_token
+    github_repo     = var.github_repo
   })
 }
 resource "aws_security_group" "github_actions_runner" {
@@ -39,18 +39,18 @@ resource "aws_security_group" "github_actions_runner" {
   }
 }
 resource "aws_instance" "github_actions_runner" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
-  key_name      = var.key_name
-  security_groups = [aws_security_group.github_actions_runner.name]
-  iam_instance_profile = var.self_hosted_runner_profile.name
+  ami                  = data.aws_ami.ubuntu.id
+  instance_type        = var.instance_type
+  key_name             = var.key_name
+  security_groups      = [aws_security_group.github_actions_runner.name]
+  iam_instance_profile = var.self_hosted_runner_profile
 
-    user_data = local.docker_user_data
+  user_data = local.docker_user_data
 
   tags = {
-    Name = var.ec2_tag_name
-    Service = var.service_name
+    Name        = var.ec2_tag_name
+    Service     = var.service_name
     Environment = var.environment
-    Project = var.project_name
+    Project     = var.project_name
   }
 }
