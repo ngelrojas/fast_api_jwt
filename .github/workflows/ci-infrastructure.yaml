@@ -47,9 +47,14 @@ jobs:
         working-directory: terraform/production/iam
         run: terraform plan -out=tfplan
 
-      - name: Provision Permissions Apply
+      - name: Provision IAM Permissions Apply
         working-directory: terraform/production/iam
-        run: terraform apply -auto-approve
+        run: |
+          terraform apply -auto-approve || {
+            terraform import aws_iam_role.ec2_ssm_fast_api ec2-ssm-fast-api
+            terraform import aws_iam_role.self_hosted_runner self-hosted-github-actions-runner-role
+            terraform apply -auto-approve
+          }
   s3:
     name: Provisioning S3 Infrastructure
     runs-on: ubuntu-latest
