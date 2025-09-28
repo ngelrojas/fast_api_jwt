@@ -3,10 +3,20 @@ name: CI/CD Provisioning Infrastructure
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+  security-events: write
+  actions: read
+  checks: write
+  issues: write
+
 jobs:
-  permissions:
-    name: Provisioning Permissions
+  iam:
+    name: Provisioning Permissions IAM
     runs-on: ubuntu-latest
+    environment: prd
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -17,26 +27,172 @@ jobs:
           terraform_version: 1.13
 
       - name: Configure AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-to-assume: ${{ secrets.AW_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
           audience: ${{ secrets.AWS_STS }}
           role-session-name: GitHubActions-${{github.run_id}}
 
-      - name: Permissions Format check and auto-fix
-        uses: ./.github/workflows/tf-check.yaml
+      - name: Terraform Format Check IAM
+        uses: dflook/terraform-fmt-check@v1
         with:
-          working-directory: terraform/permissions
+          path: terraform/iam
 
-      - name: Provision Permissions Initial Setup
+      - name: Provision Permissions IAM Initial Setup
         working-directory: terraform/permissions
         run: terraform init -input=false -no-color
 
       - name: Provision Permissions Plan
-        working-directory: terraform/permissions
+        working-directory: terraform/iam
         run: terraform plan -out=tfplan
 
       - name: Provision Permissions Apply
-        working-directory: terraform/permissions
+        working-directory: terraform/iam
         run: terraform apply -auto-approve
+  s3:
+    name: Provisioning S3 Infrastructure
+    runs-on: ubuntu-latest
+    environment: prd
+    needs: iam
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AW_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          audience: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+
+      - name: Terraform Format Check S3
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: terraform/s3-storage
+
+      - name: Provision S3 Initial Setup
+        working-directory: terraform/s3-storage
+        run: terraform init -input=false -no-color
+
+      - name: Provision S3 Plan
+        working-directory: terraform/s3-storage
+        run: terraform plan -out=tfplan
+
+      - name: Provision S3 Apply
+        working-directory: terraform/s3-storage
+        run: terraform apply -auto-approve
+  sqs:
+    name: Provisioning SQS Infrastructure
+    runs-on: ubuntu-latest
+    environment: prd
+    needs: iam
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AW_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          audience: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+
+      - name: Terraform Format Check SQS
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: terraform/sqs-notifications
+
+      - name: Provision SQS Initial Setup
+        working-directory: terraform/sqs-notifications
+        run: terraform init -input=false -no-color
+      - name: Provision SQS Plan
+        working-directory: terraform/sqs-notifications
+        run: terraform plan -out=tfplan
+      - name: Provision SQS Apply
+        working-directory: terraform/sqs-notifications
+        run: terraform apply -auto-approve
+
+  ec2-fast-api:
+    name: Provisioning EC2 Fast API Infrastructure
+    runs-on: ubuntu-latest
+    environment: prd
+    needs: iam
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AW_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          audience: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+
+      - name: Terraform Format Check EC2 Fast API
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: terraform/ec2-fast-api-jwt
+      - name: Provision EC2 Fast API Initial Setup
+        working-directory: terraform/ec2-fast-api-jwt
+        run: terraform init -input=false -no-color
+      - name: Provision EC2 Fast API Plan
+        working-directory: terraform/ec2-fast-api-jwt
+        run: terraform plan -out=tfplan
+      - name: Provision EC2 Fast API Apply
+        working-directory: terraform/ec2-fast-api-jwt
+        run: terraform apply -auto-approve
+
+  ec2-self-hosted:
+    name: Provisioning EC2 Self Hosted Runner Infrastructure
+    runs-on: ubuntu-latest
+    environment: prd
+    needs: iam
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AW_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          audience: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+
+      - name: Terraform Format Check EC2 Self Hosted Runner
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: terraform/ec2-self-hosted
+      - name: Provision EC2 Self Hosted Runner Initial Setup
+        working-directory: terraform/ec2-self-hosted
+        run: terraform init -input=false -no-color
+      - name: Provision EC2 Self Hosted Runner Plan
+        working-directory: terraform/ec2-self-hosted
+        run: terraform plan -out=tfplan
+      - name: Provision EC2 Self Hosted Runner Apply
+        working-directory: terraform/ec2-self-hosted
+        run: terraform apply -auto-approve -var="github_token=${{ secrets.EC2_TOKEN }}"
