@@ -27,3 +27,8 @@ variable "s3_bucket_arn" {
   type        = string
   default     = "arn:aws:s3:::PLACEHOLDER"
 }
+variable "self_hosted_role" {
+  description = "IAM role name for self-hosted GitHub Actions runner"
+  type        = string
+  default     = "self-hosted-role"
+}

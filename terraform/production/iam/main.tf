@@ -20,7 +20,7 @@ resource "aws_iam_role" "ec2_ssm_role" {
 }
 
 resource "aws_iam_role" "self_hosted_runner" {
-  name = "self-hosted-github-actions-runner-role"
+  name = var.self_hosted_role
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
