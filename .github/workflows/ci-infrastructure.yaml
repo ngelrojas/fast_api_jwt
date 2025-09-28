@@ -47,15 +47,6 @@ jobs:
         working-directory: terraform/production/iam
         run: terraform plan -out=tfplan
 
-      - name: Import existing IAM roles if they exist
-        working-directory: terraform/production/iam
-        run: |
-          if aws iam get-role --role-name ec2-ssm-fast-api; then
-            terraform import aws_iam_role.ec2_ssm_fast_api ec2-ssm-fast-api || true
-          fi
-          if aws iam get-role --role-name self-hosted-github-actions-runner-role; then
-            terraform import aws_iam_role.self_hosted_runner self-hosted-github-actions-runner-role || true
-          fi
       - name: Provision IAM Permissions Apply
         working-directory: terraform/production/iam
         run: terraform apply -auto-approve
