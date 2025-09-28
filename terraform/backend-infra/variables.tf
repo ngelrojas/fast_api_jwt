@@ -19,7 +19,7 @@ variable "project_name" {
 variable "s3_bucket_name" {
   description = "The name of the S3 bucket to store the Terraform state file."
   type        = string
-  default     = "storage-csv-img-fies-us-east-1"
+  default     = "tf-state-lock-bucket-prod"
 }
 
 variable "dynamodb_table_name" {
