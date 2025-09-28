@@ -17,4 +17,6 @@ repos:
     rev: v1.77.0
     hooks:
       - id: terraform_fmt
+        always_run: true
       - id: terraform_validate
+        always_run: true
