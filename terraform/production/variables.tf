@@ -33,12 +33,12 @@ variable "github_token" {
   sensitive   = true
 }
 variable "bucket_name" {
-    description = "S3 bucket name for application data"
-    type        = string
-    default = "tf-state-locks-fast-api-jwt"
+  description = "S3 bucket name for application data"
+  type        = string
+  default     = "tf-state-locks-fast-api-jwt"
 }
 variable "table_name" {
-    description = "DynamoDB table name for Terraform state locking"
-    type        = string
-    default = "tf-table-locks-fast-api-jwt"
+  description = "DynamoDB table name for Terraform state locking"
+  type        = string
+  default     = "tf-table-locks-fast-api-jwt"
 }

@@ -2,14 +2,14 @@ data "aws_vpc" "default" {
   default = true
 }
 locals {
-  docker_user_data = templatefile("user_data.sh", {
-    region = var.aws_region
-    app_data_bucket = var.storage_files_csv.bucket
+  docker_user_data = templatefile("${path.module}/user_data.sh", {
+    region          = var.aws_region
+    app_data_bucket = var.storage_files_csv
   })
 }
 resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
   policy_arn = var.policy_arn
-  role       = var.ec2_ssm_role.name
+  role       = var.ec2_ssm_role
 }
 resource "aws_security_group" "fast_api_jwt_sg" {
   name        = "fast-api-jwt-sg"
@@ -31,27 +31,27 @@ resource "aws_security_group" "fast_api_jwt_sg" {
   }
 }
 resource "aws_instance" "fast_api_jwt" {
-  ami = var.ec2_ami
-  instance_type = var.ec2_instance_type
-  subnet_id = ""
+  ami             = var.ec2_ami
+  instance_type   = var.ec2_instance_type
+  subnet_id       = ""
   security_groups = [aws_security_group.fast_api_jwt_sg.name]
 
   user_data = local.docker_user_data
 
   metadata_options {
-    http_tokens = "required"
+    http_tokens   = "required"
     http_endpoint = "enabled"
   }
   root_block_device {
     volume_type = "gp3"
     volume_size = 50
-    encrypted = true
+    encrypted   = true
   }
 
   tags = {
-    Name = var.ec2_tag_name
-    Service = var.service_name
+    Name        = var.ec2_tag_name
+    Service     = var.service_name
     Environment = var.environment
-    Project = var.project_name
+    Project     = var.project_name
   }
 }

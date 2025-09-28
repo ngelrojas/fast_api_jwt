@@ -11,9 +11,9 @@ resource "aws_s3_bucket" "storage_files_csv" {
 resource "aws_s3_bucket_public_access_block" "storage_files_csv_block" {
   bucket = aws_s3_bucket.storage_files_csv.id
 
-  block_public_acls   = true
-  block_public_policy = true
-  ignore_public_acls  = true
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
@@ -49,10 +49,10 @@ resource "aws_s3_bucket_policy" "storage_files_csv_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
-        Principal = { "AWS": "*" },
-        Action = "s3:GetObject",
-        Resource = "${aws_s3_bucket.storage_files_csv.arn}/*"
+        Effect    = "Allow",
+        Principal = { "AWS" : "*" },
+        Action    = "s3:GetObject",
+        Resource  = "${aws_s3_bucket.storage_files_csv.arn}/*"
       }
     ]
   })
@@ -62,9 +62,9 @@ resource "aws_s3_bucket_notification" "files_csv_notification" {
   bucket = aws_s3_bucket.storage_files_csv.id
 
   queue {
-    queue_arn = var.file_upload_queue.arn
-    events = ["s3:ObjectCreated:Put"]
+    queue_arn     = var.file_upload_queue
+    events        = ["s3:ObjectCreated:Put"]
     filter_prefix = ".csv"
   }
-    depends_on = [aws_s3_bucket_policy.storage_files_csv_policy]
+  depends_on = [aws_s3_bucket_policy.storage_files_csv_policy]
 }
