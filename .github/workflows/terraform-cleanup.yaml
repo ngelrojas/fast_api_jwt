@@ -1,0 +1,70 @@
+name: Terraform State Cleanup & Resource Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource_addresses:
+        description: 'Comma-separated list of Terraform resource addresses (e.g., aws_iam_policy.policy1,aws_iam_policy.policy2)'
+        required: true
+        type: string
+      working_directory:
+        description: 'Terraform working directory (e.g., terraform/production/iam)'
+        required: true
+        type: string
+      destroy:
+        description: 'Set to true to destroy the resources after removing from state'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  remove-state:
+    name: Remove Resources from Terraform State
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AW_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          audience: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+      - name: Remove resources from state
+        working-directory: ${{ github.event.inputs.working_directory }}
+        run: |
+          terraform init -input=false -no-color
+          for addr in $(echo "${{ github.event.inputs.resource_addresses }}" | tr ',' '\n'); do
+            terraform state rm "$addr" || echo "Resource $addr not in state, skipping."
+          done
+
+  destroy-resources:
+    name: Destroy Specific Terraform Resources
+    if: ${{ github.event.inputs.destroy == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AW_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          audience: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+      - name: Destroy resources
+        working-directory: ${{ github.event.inputs.working_directory }}
+        run: |
+          terraform init -input=false -no-color
+          for addr in $(echo "${{ github.event.inputs.resource_addresses }}" | tr ',' '\n'); do
+            terraform destroy -auto-approve -target="$addr"
+          done

@@ -23,7 +23,7 @@ data "aws_vpc" "default" {
 
 module "s3-storage" {
   source            = "./s3-storage"
-  file_upload_queue = module.sqs-notifications.file_upload_queue.arn
+  file_upload_queue = module.sqs-notifications.file_upload_queue
 }
 
 module "iam" {
@@ -39,7 +39,7 @@ module "sqs-notifications" {
 module "ec2-api" {
   source            = "./ec2-fast-api-jwt"
   storage_files_csv = module.s3-storage.storage_files_csv.bucket
-  ec2_ssm_role      = module.iam.ec2_ssm_role.name
+  ec2_ssm_role      = module.iam.ec2_ssm_role
 }
 
 module "ec2-self-hosted" {
