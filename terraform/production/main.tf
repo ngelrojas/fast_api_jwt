@@ -5,13 +5,6 @@ terraform {
       version = "5.0"
     }
   }
-  backend "s3" {
-    bucket         = var.bucket_name
-    key            = "terraform/state/production.tfstate"
-    region         = var.aws_region
-    dynamodb_table = var.table_name
-    encrypt        = true
-  }
 }
 provider "aws" {
   region = var.aws_region
