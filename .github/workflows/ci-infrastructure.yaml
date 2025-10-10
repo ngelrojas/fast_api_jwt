@@ -1,4 +1,4 @@
-name: CI/CD Provisioning Infrastructure
+name: 2 - Provisioning Infrastructure
 
 on:
   workflow_dispatch:

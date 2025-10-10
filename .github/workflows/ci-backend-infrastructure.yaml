@@ -1,4 +1,4 @@
-name: CI/CD Provisioning Backend Infrastructure
+name: 1 - Provisioning Backend Infrastructure
 
 on:
   workflow_dispatch:
