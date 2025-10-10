@@ -1,4 +1,4 @@
-name: CI/CD Pipeline Productions
+name: 3 - Production Deploy
 
 on:
   workflow_dispatch:
