@@ -215,3 +215,6 @@ jobs:
       - name: Provision EC2 Self Hosted Runner Apply
         working-directory: terraform/production/ec2-self-hosted
         run: terraform apply -auto-approve -var="github_token=${{ secrets.EC2_TOKEN }}"
+
+# .\SCADM1N
+# &![Qt{#nQJG3o&
