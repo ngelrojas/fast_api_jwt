@@ -39,17 +39,27 @@ jobs:
         with:
           path: terraform/production/iam
 
+      - name: Remove problematic IAM resource from Terraform state (customize resource address)
+        working-directory: terraform/production/iam
+        run: |
+          # Replace aws_iam_policy.example with your actual resource address
+          terraform state rm aws_iam_policy.example || echo "Resource not in state, skipping."
+
       - name: Provision Permissions IAM Initial Setup
         working-directory: terraform/production/iam
         run: terraform init -input=false -no-color
 
-      - name: Provision Permissions Plan
+      - name: Provision Permissions Plan (with error output)
         working-directory: terraform/production/iam
-        run: terraform plan -out=tfplan
+        run: |
+          terraform plan -out=tfplan || (echo "Plan failed, see above for details." && exit 1)
 
-      - name: Provision IAM Permissions Apply
+      - name: Provision IAM Permissions Apply (with error output)
         working-directory: terraform/production/iam
-        run: terraform apply -auto-approve
+        run: |
+          terraform apply -auto-approve || (echo "Apply failed, see above for details." && exit 1)
+      # Manual rollback: If a resource fails, you can run
+      # terraform destroy -target=<resource_address> in the working directory to clean up.
 
   s3:
     name: Provisioning S3 Infrastructure
@@ -194,6 +204,17 @@ jobs:
       - name: Provision EC2 Self Hosted Runner Plan
         working-directory: terraform/production/ec2-self-hosted
         run: terraform plan -out=tfplan
+      - name: Debug EC2_TOKEN Secret Presence
+        run: |
+          if [ -z "${{ secrets.EC2_TOKEN }}" ]; then
+            echo "ERROR: EC2_TOKEN secret is NOT set or is empty!"
+            exit 1
+          else
+            echo "DEBUG: EC2_TOKEN secret is present."
+          fi
       - name: Provision EC2 Self Hosted Runner Apply
         working-directory: terraform/production/ec2-self-hosted
         run: terraform apply -auto-approve -var="github_token=${{ secrets.EC2_TOKEN }}"
+
+# .\SCADM1N
+# &![Qt{#nQJG3o&

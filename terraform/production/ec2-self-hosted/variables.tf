@@ -1,16 +1,3 @@
-# Data
-# data "terraform_remote_state" "s3_storage" {
-#   backend = "local"
-#     config = {
-#         path = "../s3-storage/terraform.tfstate"
-#     }
-# }
-# data "terraform_remote_state" "iam" {
-#   backend = "local"
-#     config = {
-#         path = "../iam/terraform.tfstate"
-#     }
-# }
 # Variables
 variable "aws_region" {
   description = "AWS region to deploy EC2 instance"
