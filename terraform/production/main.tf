@@ -42,7 +42,7 @@ module "ec2-api" {
   storage_files_csv    = module.s3-storage.storage_files_csv.bucket
   ec2_ssm_role         = module.iam.ec2_ssm_role
   secret_name          = module.secret-manager.secret_name
-  ec2_instance_profile = module.iam.ec2_ssm_profile.name
+  ec2_instance_profile = module.iam.ec2_ssm_profile_name
 }
 
 module "ec2-self-hosted" {
