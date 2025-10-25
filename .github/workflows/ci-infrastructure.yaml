@@ -275,12 +275,36 @@ jobs:
         run: |
           echo "Checking for Secrets Manager resources that need to be imported..."
 
-          # Check and import Secrets Manager secret
-          if terraform state show "aws_secretsmanager_secret.fast_api_credentials" &>/dev/null; then
-            echo "✓ Secret already in Terraform state"
+          # Check if secret exists in AWS first
+          SECRET_EXISTS=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-credentials 2>/dev/null && echo "yes" || echo "no")
+
+          if [ "$SECRET_EXISTS" = "yes" ]; then
+            echo "→ Secret exists in AWS"
+
+            # Check if it's in Terraform state
+            if terraform state show "aws_secretsmanager_secret.fast_api_credentials" &>/dev/null; then
+              echo "✓ Secret already in Terraform state"
+            else
+              echo "→ Secret not in Terraform state, importing..."
+              terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-credentials || {
+                echo "⚠ Import failed. This might be a state issue."
+                exit 1
+              }
+            fi
+
+            # Check and import secret version
+            if terraform state show "aws_secretsmanager_secret_version.fast_api_credentials_version" &>/dev/null; then
+              echo "✓ Secret version already in Terraform state"
+            else
+              echo "→ Secret version not in Terraform state, importing..."
+              # Get the secret ARN for version import
+              SECRET_ARN=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-credentials --query 'ARN' --output text)
+              terraform import "aws_secretsmanager_secret_version.fast_api_credentials_version" "${SECRET_ARN}|AWSCURRENT" || {
+                echo "⚠ Secret version import failed, will be managed on next apply"
+              }
+            fi
           else
-            echo "→ Secret not in state, attempting import..."
-            terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-credentials || echo "⚠ Import failed or resource doesn't exist, will try to create"
+            echo "→ Secret doesn't exist in AWS, will be created"
           fi
 
           echo "Import checks completed. Applying changes..."

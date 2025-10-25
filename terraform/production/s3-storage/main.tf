@@ -48,16 +48,43 @@ resource "aws_s3_bucket_lifecycle_configuration" "storage_files_csv_lifecycle" {
   }
 }
 
+# S3 bucket policy to allow access from specific IAM roles and S3 service
 resource "aws_s3_bucket_policy" "storage_files_csv_policy" {
   bucket = aws_s3_bucket.storage_files_csv.id
+
+  # Ensure bucket policy is applied after public access block
+  depends_on = [aws_s3_bucket_public_access_block.storage_files_csv_block]
+
   policy = jsonencode({
-    Version = "2012-10-17",
+    Version = "2012-10-17"
     Statement = [
       {
-        Effect    = "Allow",
-        Principal = { "AWS" : "*" },
-        Action    = "s3:GetObject",
-        Resource  = "${aws_s3_bucket.storage_files_csv.arn}/*"
+        Sid    = "AllowEC2RoleAccess"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::209479292315:role/ec2-ssm-fast-api",
+            "arn:aws:iam::209479292315:role/self-hosted-role"
+          ]
+        }
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "${aws_s3_bucket.storage_files_csv.arn}",
+          "${aws_s3_bucket.storage_files_csv.arn}/*"
+        ]
+      },
+      {
+        Sid    = "AllowS3NotificationToSQS"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "s3:GetBucketNotification"
+        Resource = aws_s3_bucket.storage_files_csv.arn
       }
     ]
   })
