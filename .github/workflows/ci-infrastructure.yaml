@@ -74,7 +74,7 @@ jobs:
             echo "✓ Self-Hosted Runner Role already in Terraform state"
           else
             echo "→ Self-Hosted Runner Role not in state, attempting import..."
-            terraform import aws_iam_role.self_hosted_runner self-hosted-runner || echo "⚠ Import failed or resource doesn't exist, will try to create"
+            terraform import aws_iam_role.self_hosted_runner self-hosted-role || echo "⚠ Import failed or resource doesn't exist, will try to create"
           fi
 
           # Check and import self-hosted-runner instance profile
@@ -346,7 +346,7 @@ jobs:
             echo "✓ IAM role policy attachment already in Terraform state"
           else
             echo "→ IAM role policy attachment not in state, attempting import..."
-            terraform import aws_iam_role_policy_attachment.ec2_ssm_policy ec2-ssm-fast-api || echo "⚠ Policy attachment import failed"
+            terraform import aws_iam_role_policy_attachment.ec2_ssm_policy ec2-ssm-fast-api/arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore || echo "⚠ Policy attachment import failed"
           fi
 
           echo "Import checks completed. Applying changes..."
