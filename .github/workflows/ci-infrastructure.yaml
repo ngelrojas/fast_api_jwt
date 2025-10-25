@@ -288,7 +288,7 @@ jobs:
           echo "Checking for Secrets Manager resources that need to be imported..."
 
           # Check if secret exists in AWS first
-          SECRET_EXISTS=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-credentials 2>/dev/null && echo "yes" || echo "no")
+          SECRET_EXISTS=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-app 2>/dev/null && echo "yes" || echo "no")
 
           if [ "$SECRET_EXISTS" = "yes" ]; then
             echo "→ Secret exists in AWS"
@@ -298,7 +298,7 @@ jobs:
               echo "✓ Secret already in Terraform state"
             else
               echo "→ Secret not in Terraform state, importing..."
-              if terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-credentials; then
+              if terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-app; then
                 echo "✓ Secret imported successfully"
               else
                 echo "⚠ Import failed. Checking if it's already managed elsewhere..."
