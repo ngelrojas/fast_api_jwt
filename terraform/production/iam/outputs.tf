@@ -6,6 +6,11 @@ output "ec2_ssm_profile" {
   value = aws_iam_instance_profile.ec2_ssm_profile
 }
 
+output "ec2_ssm_profile_name" {
+  value       = aws_iam_instance_profile.ec2_ssm_profile.name
+  description = "EC2 IAM instance profile name for SSM"
+}
+
 output "self_hosted_runner" {
   value = aws_iam_role.self_hosted_runner
 }

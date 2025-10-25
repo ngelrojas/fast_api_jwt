@@ -38,6 +38,7 @@ variable "password" {
   description = "Application password"
   type        = string
   sensitive   = true
+  default     = "123456"
 }
 
 variable "url_base" {
