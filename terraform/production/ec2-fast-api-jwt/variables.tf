@@ -12,6 +12,7 @@ variable "ec2_ami" {
 variable "storage_files_csv" {
   description = "S3 bucket for storing files"
   type        = string
+  default     = "storage-files-csv"
 }
 variable "ec2_instance_type" {
   description = "EC2 instance type"
@@ -41,6 +42,7 @@ variable "project_name" {
 variable "ec2_ssm_role" {
   description = "EC2 IAM Role with SSM access"
   type        = string
+  default     = "ec2-ssm-fast-api"
 }
 variable "policy_arn" {
   description = "The ARN of the policy to attach to the role"
@@ -67,4 +69,5 @@ variable "secret_name" {
 variable "ec2_instance_profile" {
   description = "IAM instance profile name for EC2 instance"
   type        = string
+  default     = "ec2-ssm-fast-api-profile"
 }
