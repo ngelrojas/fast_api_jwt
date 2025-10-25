@@ -40,6 +40,10 @@ variable "storage_files_csv" {
     bucket = string
     arn    = string
   })
+  default = {
+    bucket = "storage-files-csv"
+    arn    = "arn:aws:s3:::storage-files-csv"
+  }
 }
 variable "ec2_tag_name" {
   description = "Tag name for the EC2 instance"
