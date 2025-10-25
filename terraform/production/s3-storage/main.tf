@@ -1,3 +1,8 @@
+# Data source to fetch the SQS queue ARN
+data "aws_sqs_queue" "file_upload_queue" {
+  name = var.sqs_queue_name
+}
+
 resource "aws_s3_bucket" "storage_files_csv" {
   bucket = var.s3_name
   tags = {
@@ -62,7 +67,7 @@ resource "aws_s3_bucket_notification" "files_csv_notification" {
   bucket = aws_s3_bucket.storage_files_csv.id
 
   queue {
-    queue_arn     = var.file_upload_queue
+    queue_arn     = data.aws_sqs_queue.file_upload_queue.arn
     events        = ["s3:ObjectCreated:Put"]
     filter_prefix = ".csv"
   }

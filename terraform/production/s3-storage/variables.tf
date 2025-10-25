@@ -14,7 +14,9 @@ variable "expiration_day" {
   type        = number
   default     = 30 # Automatically delete objects older than 30 days
 }
-variable "file_upload_queue" {
-  description = "The SQS queue for file uploads"
+
+variable "sqs_queue_name" {
+  description = "The name of the SQS queue for file uploads"
   type        = string
+  default     = "file-upload-queue"
 }
