@@ -9,3 +9,13 @@ variable "environment" {
   type        = string
   default     = "production"
 }
+variable "file_upload_queue_tag_name" {
+  description = "Tag name for the SQS file upload queue"
+  type        = string
+  default     = "fast-api-jwt-queue"
+}
+variable "file_upload_queue_tag_description" {
+  description = "Tag description for the SQS file upload queue"
+  type        = string
+  default     = "file-upload-notifications-sqs"
+}

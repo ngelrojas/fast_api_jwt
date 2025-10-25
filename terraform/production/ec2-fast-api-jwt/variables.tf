@@ -47,3 +47,24 @@ variable "policy_arn" {
   type        = string
   default     = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
+variable "fast_api_jwt_sg_name" {
+  description = "Security Group name for Fast API JWT"
+  type        = string
+  default     = "fast-api-jwt-sg"
+}
+variable "fast_api_jwt_sg_description" {
+  description = "Security Group description for Fast API JWT"
+  type        = string
+  default     = "Allow SSH and fast api jwt traffic"
+}
+
+variable "secret_name" {
+  description = "Name of the AWS Secrets Manager secret"
+  type        = string
+  default     = "fast-api-jwt-credentials"
+}
+
+variable "ec2_instance_profile" {
+  description = "IAM instance profile name for EC2 instance"
+  type        = string
+}

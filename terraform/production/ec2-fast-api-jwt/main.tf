@@ -5,6 +5,7 @@ locals {
   docker_user_data = templatefile("${path.module}/user_data.sh", {
     region          = var.aws_region
     app_data_bucket = var.storage_files_csv
+    secret_name     = var.secret_name
   })
 }
 resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
@@ -12,8 +13,8 @@ resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
   role       = var.ec2_ssm_role
 }
 resource "aws_security_group" "fast_api_jwt_sg" {
-  name        = "fast-api-jwt-sg"
-  description = "Allow SSH and fast api jwt traffic"
+  name        = var.fast_api_jwt_sg_name
+  description = var.fast_api_jwt_sg_description
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
@@ -31,10 +32,11 @@ resource "aws_security_group" "fast_api_jwt_sg" {
   }
 }
 resource "aws_instance" "fast_api_jwt" {
-  ami             = var.ec2_ami
-  instance_type   = var.ec2_instance_type
-  subnet_id       = ""
-  security_groups = [aws_security_group.fast_api_jwt_sg.name]
+  ami                  = var.ec2_ami
+  instance_type        = var.ec2_instance_type
+  subnet_id            = ""
+  security_groups      = [aws_security_group.fast_api_jwt_sg.name]
+  iam_instance_profile = var.ec2_instance_profile
 
   user_data = local.docker_user_data
 

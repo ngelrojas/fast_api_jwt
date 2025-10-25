@@ -42,3 +42,28 @@ variable "table_name" {
   type        = string
   default     = ""
 }
+
+# Secret Manager Variables
+variable "secret_key" {
+  description = "Secret key for JWT encoding"
+  type        = string
+  sensitive   = true
+}
+
+variable "user_name" {
+  description = "Application username"
+  type        = string
+  sensitive   = true
+}
+
+variable "password" {
+  description = "Application password"
+  type        = string
+  sensitive   = true
+}
+
+variable "url_base" {
+  description = "Base URL for the application"
+  type        = string
+  default     = "http://localhost:8000"
+}

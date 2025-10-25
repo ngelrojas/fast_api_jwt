@@ -65,3 +65,18 @@ variable "self_hosted_runner_profile" {
   description = "IAM instance profile for the self-hosted GitHub Actions runner"
   type        = string
 }
+variable "ubuntu_name_aim" {
+  description = "aim name for ubuntu AMI"
+  type        = string
+  default     = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04"
+}
+variable "github_actions_runner_name" {
+  description = "GitHub Actions runner security group"
+  type        = string
+  default     = "github-actions-self-hosted-sg"
+}
+variable "github_actions_runner_description" {
+  description = "Description for GitHub Actions runner security group"
+  type        = string
+  default     = "Allow SSH and GitHub Actions runner traffic"
+}
