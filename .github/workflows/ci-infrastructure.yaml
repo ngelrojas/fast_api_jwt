@@ -82,7 +82,7 @@ jobs:
             echo "✓ Self-Hosted Runner Instance Profile already in Terraform state"
           else
             echo "→ Self-Hosted Runner Instance Profile not in state, attempting import..."
-            terraform import aws_iam_instance_profile.self_hosted_runner_profile self-hosted-runner || echo "⚠ Import failed or resource doesn't exist, will try to create"
+            terraform import aws_iam_instance_profile.self_hosted_runner_profile self-hosted-role || echo "⚠ Import failed or resource doesn't exist, will try to create"
           fi
 
           echo "Import checks completed. Applying changes..."
