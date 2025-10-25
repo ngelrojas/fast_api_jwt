@@ -39,12 +39,6 @@ jobs:
         with:
           path: terraform/production/iam
 
-      - name: Remove problematic IAM resource from Terraform state (customize resource address)
-        working-directory: terraform/production/iam
-        run: |
-          # Replace aws_iam_policy.example with your actual resource address
-          terraform state rm aws_iam_policy.example || echo "Resource not in state, skipping."
-
       - name: Provision Permissions IAM Initial Setup
         working-directory: terraform/production/iam
         run: terraform init -input=false -no-color
@@ -54,9 +48,44 @@ jobs:
         run: |
           terraform plan -out=tfplan || (echo "Plan failed, see above for details." && exit 1)
 
-      - name: Provision IAM Permissions Apply (with error output)
+      - name: Import existing IAM resources if needed and apply
         working-directory: terraform/production/iam
         run: |
+          echo "Checking for IAM resources that need to be imported..."
+
+          # Check and import ec2-ssm-fast-api role
+          if terraform state show "aws_iam_role.ec2_ssm_role" &>/dev/null; then
+            echo "✓ EC2 SSM Role already in Terraform state"
+          else
+            echo "→ EC2 SSM Role not in state, attempting import..."
+            terraform import aws_iam_role.ec2_ssm_role ec2-ssm-fast-api || echo "⚠ Import failed or resource doesn't exist, will try to create"
+          fi
+
+          # Check and import ec2-ssm-fast-api-profile
+          if terraform state show "aws_iam_instance_profile.ec2_ssm_profile" &>/dev/null; then
+            echo "✓ EC2 SSM Instance Profile already in Terraform state"
+          else
+            echo "→ EC2 SSM Instance Profile not in state, attempting import..."
+            terraform import aws_iam_instance_profile.ec2_ssm_profile ec2-ssm-fast-api-profile || echo "⚠ Import failed or resource doesn't exist, will try to create"
+          fi
+
+          # Check and import self-hosted-runner role
+          if terraform state show "aws_iam_role.self_hosted_runner" &>/dev/null; then
+            echo "✓ Self-Hosted Runner Role already in Terraform state"
+          else
+            echo "→ Self-Hosted Runner Role not in state, attempting import..."
+            terraform import aws_iam_role.self_hosted_runner self-hosted-runner || echo "⚠ Import failed or resource doesn't exist, will try to create"
+          fi
+
+          # Check and import self-hosted-runner instance profile
+          if terraform state show "aws_iam_instance_profile.self_hosted_runner_profile" &>/dev/null; then
+            echo "✓ Self-Hosted Runner Instance Profile already in Terraform state"
+          else
+            echo "→ Self-Hosted Runner Instance Profile not in state, attempting import..."
+            terraform import aws_iam_instance_profile.self_hosted_runner_profile self-hosted-runner || echo "⚠ Import failed or resource doesn't exist, will try to create"
+          fi
+
+          echo "Import checks completed. Applying changes..."
           terraform apply -auto-approve || (echo "Apply failed, see above for details." && exit 1)
       # Manual rollback: If a resource fails, you can run
       # terraform destroy -target=<resource_address> in the working directory to clean up.
@@ -90,12 +119,26 @@ jobs:
       - name: Provision SQS Initial Setup
         working-directory: terraform/production/sqs-notifications
         run: terraform init -input=false -no-color
+
       - name: Provision SQS Plan
         working-directory: terraform/production/sqs-notifications
         run: terraform plan -out=tfplan
-      - name: Provision SQS Apply
+
+      - name: Import existing SQS resources if needed and apply
         working-directory: terraform/production/sqs-notifications
-        run: terraform apply -auto-approve
+        run: |
+          echo "Checking for SQS resources that need to be imported..."
+
+          # Check and import SQS queue
+          if terraform state show "aws_sqs_queue.file_upload_queue" &>/dev/null; then
+            echo "✓ SQS queue already in Terraform state"
+          else
+            echo "→ SQS queue not in state, attempting import..."
+            terraform import aws_sqs_queue.file_upload_queue file-upload-queue || echo "⚠ Import failed or resource doesn't exist, will try to create"
+          fi
+
+          echo "Import checks completed. Applying changes..."
+          terraform apply -auto-approve
 
   s3:
     name: Provisioning S3 Bucket
@@ -132,9 +175,53 @@ jobs:
         working-directory: terraform/production/s3-storage
         run: terraform plan -out=tfplan
 
-      - name: Provision S3 Apply
+      - name: Import existing S3 resources if needed and apply
         working-directory: terraform/production/s3-storage
-        run: terraform apply -auto-approve
+        run: |
+          echo "Checking for S3 resources that need to be imported..."
+
+          # Check and import S3 bucket
+          if terraform state show "aws_s3_bucket.storage_files_csv" &>/dev/null; then
+            echo "✓ S3 bucket already in Terraform state"
+          else
+            echo "→ S3 bucket not in state, attempting import..."
+            terraform import aws_s3_bucket.storage_files_csv storage-files-csv || echo "⚠ Bucket import failed"
+          fi
+
+          # Check and import S3 public access block
+          if terraform state show "aws_s3_bucket_public_access_block.storage_files_csv_block" &>/dev/null; then
+            echo "✓ S3 public access block already in Terraform state"
+          else
+            echo "→ S3 public access block not in state, attempting import..."
+            terraform import aws_s3_bucket_public_access_block.storage_files_csv_block storage-files-csv || echo "⚠ Public access block import failed"
+          fi
+
+          # Check and import S3 encryption configuration
+          if terraform state show "aws_s3_bucket_server_side_encryption_configuration.storage_files_csv_encryption" &>/dev/null; then
+            echo "✓ S3 encryption configuration already in Terraform state"
+          else
+            echo "→ S3 encryption configuration not in state, attempting import..."
+            terraform import aws_s3_bucket_server_side_encryption_configuration.storage_files_csv_encryption storage-files-csv || echo "⚠ Encryption import failed"
+          fi
+
+          # Check and import S3 lifecycle configuration
+          if terraform state show "aws_s3_bucket_lifecycle_configuration.storage_files_csv_lifecycle" &>/dev/null; then
+            echo "✓ S3 lifecycle configuration already in Terraform state"
+          else
+            echo "→ S3 lifecycle configuration not in state, attempting import..."
+            terraform import aws_s3_bucket_lifecycle_configuration.storage_files_csv_lifecycle storage-files-csv || echo "⚠ Lifecycle import failed"
+          fi
+
+          # Check and import S3 bucket policy
+          if terraform state show "aws_s3_bucket_policy.storage_files_csv_policy" &>/dev/null; then
+            echo "✓ S3 bucket policy already in Terraform state"
+          else
+            echo "→ S3 bucket policy not in state, attempting import..."
+            terraform import aws_s3_bucket_policy.storage_files_csv_policy storage-files-csv || echo "⚠ Policy import failed"
+          fi
+
+          echo "Import checks completed. Applying changes..."
+          terraform apply -auto-approve
 
   secreter-manager-fast-api:
     name: Provisioning Secrets Manager Fast API Infrastructure
@@ -166,12 +253,26 @@ jobs:
       - name: Provision Secret manager Initial Setup
         working-directory: terraform/production/secret-manager
         run: terraform init -input=false -no-color
+
       - name: Provision Secret manager Plan
         working-directory: terraform/production/secret-manager
         run: terraform plan -out=tfplan
-      - name: Provision Secret manager Apply
+
+      - name: Import existing Secrets Manager resources if needed and apply
         working-directory: terraform/production/secret-manager
-        run: terraform apply -auto-approve
+        run: |
+          echo "Checking for Secrets Manager resources that need to be imported..."
+
+          # Check and import Secrets Manager secret
+          if terraform state show "aws_secretsmanager_secret.fast_api_credentials" &>/dev/null; then
+            echo "✓ Secret already in Terraform state"
+          else
+            echo "→ Secret not in state, attempting import..."
+            terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-credentials || echo "⚠ Import failed or resource doesn't exist, will try to create"
+          fi
+
+          echo "Import checks completed. Applying changes..."
+          terraform apply -auto-approve
 
   ec2-fast-api:
     name: Provisioning EC2 Fast API Infrastructure
@@ -202,12 +303,54 @@ jobs:
       - name: Provision EC2 Fast API Initial Setup
         working-directory: terraform/production/ec2-fast-api-jwt
         run: terraform init -input=false -no-color
+
       - name: Provision EC2 Fast API Plan
         working-directory: terraform/production/ec2-fast-api-jwt
         run: terraform plan -out=tfplan
-      - name: Provision EC2 Fast API Apply
+
+      - name: Import existing EC2 Fast API resources if needed and apply
         working-directory: terraform/production/ec2-fast-api-jwt
-        run: terraform apply -auto-approve
+        run: |
+          echo "Checking for EC2 Fast API resources that need to be imported..."
+
+          # Check and import security group
+          if terraform state show "aws_security_group.fast_api_jwt_sg" &>/dev/null; then
+            echo "✓ Security group already in Terraform state"
+          else
+            echo "→ Security group not in state, checking AWS..."
+            SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=fast-api-jwt-sg" --query "SecurityGroups[0].GroupId" --output text 2>/dev/null)
+            if [ "$SG_ID" != "None" ] && [ -n "$SG_ID" ]; then
+              echo "→ Found security group $SG_ID in AWS, importing..."
+              terraform import aws_security_group.fast_api_jwt_sg "$SG_ID" || echo "⚠ Security group import failed"
+            else
+              echo "→ Security group doesn't exist in AWS, will be created"
+            fi
+          fi
+
+          # Check and import EC2 instance
+          if terraform state show "aws_instance.fast_api_jwt" &>/dev/null; then
+            echo "✓ EC2 instance already in Terraform state"
+          else
+            echo "→ EC2 instance not in state, checking AWS..."
+            INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=fast-api-jwt" "Name=instance-state-name,Values=running,stopped" --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null)
+            if [ "$INSTANCE_ID" != "None" ] && [ -n "$INSTANCE_ID" ]; then
+              echo "→ Found instance $INSTANCE_ID in AWS, importing..."
+              terraform import aws_instance.fast_api_jwt "$INSTANCE_ID" || echo "⚠ Instance import failed"
+            else
+              echo "→ EC2 instance doesn't exist in AWS, will be created"
+            fi
+          fi
+
+          # Check and import IAM role policy attachment
+          if terraform state show "aws_iam_role_policy_attachment.ec2_ssm_policy" &>/dev/null; then
+            echo "✓ IAM role policy attachment already in Terraform state"
+          else
+            echo "→ IAM role policy attachment not in state, attempting import..."
+            terraform import aws_iam_role_policy_attachment.ec2_ssm_policy ec2-ssm-fast-api || echo "⚠ Policy attachment import failed"
+          fi
+
+          echo "Import checks completed. Applying changes..."
+          terraform apply -auto-approve
 
   ec2-self-hosted:
     name: Provisioning EC2 Self Hosted Runner Infrastructure
@@ -301,6 +444,39 @@ jobs:
             echo "DEBUG: Token is present (length: ${#TOKEN})"
             echo "DEBUG: Token will be passed to Terraform"
           fi
-      - name: Provision EC2 Self Hosted Runner Apply
+
+      - name: Import existing EC2 Self Hosted Runner resources if needed and apply
         working-directory: terraform/production/ec2-self-hosted
-        run: terraform apply -auto-approve -var="github_token=${{ steps.create_token.outputs.token }}"
+        run: |
+          echo "Checking for EC2 Self Hosted Runner resources that need to be imported..."
+
+          # Check and import security group
+          if terraform state show "aws_security_group.github_actions_runner" &>/dev/null; then
+            echo "✓ Security group already in Terraform state"
+          else
+            echo "→ Security group not in state, checking AWS..."
+            SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=github-actions-runner-sg" --query "SecurityGroups[0].GroupId" --output text 2>/dev/null)
+            if [ "$SG_ID" != "None" ] && [ -n "$SG_ID" ]; then
+              echo "→ Found security group $SG_ID in AWS, importing..."
+              terraform import aws_security_group.github_actions_runner "$SG_ID" || echo "⚠ Security group import failed"
+            else
+              echo "→ Security group doesn't exist in AWS, will be created"
+            fi
+          fi
+
+          # Check and import EC2 instance
+          if terraform state show "aws_instance.github_actions_runner" &>/dev/null; then
+            echo "✓ EC2 instance already in Terraform state"
+          else
+            echo "→ EC2 instance not in state, checking AWS..."
+            INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=github-actions-self-hosted" "Name=instance-state-name,Values=running,stopped" --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null)
+            if [ "$INSTANCE_ID" != "None" ] && [ -n "$INSTANCE_ID" ]; then
+              echo "→ Found instance $INSTANCE_ID in AWS, importing..."
+              terraform import aws_instance.github_actions_runner "$INSTANCE_ID" || echo "⚠ Instance import failed"
+            else
+              echo "→ EC2 instance doesn't exist in AWS, will be created"
+            fi
+          fi
+
+          echo "Import checks completed. Applying changes with GitHub token..."
+          terraform apply -auto-approve -var="github_token=${{ steps.create_token.outputs.token }}"
