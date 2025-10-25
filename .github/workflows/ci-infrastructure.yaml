@@ -8,7 +8,7 @@ permissions:
   id-token: write
   pull-requests: write
   security-events: write
-  actions: read
+  actions: write
   checks: write
   issues: write
 
@@ -136,6 +136,43 @@ jobs:
         working-directory: terraform/production/sqs-notifications
         run: terraform apply -auto-approve
 
+  secreter-manager-fast-api:
+    name: Provisioning Secrets Manager Fast API Infrastructure
+    runs-on: ubuntu-latest
+    environment: prd
+    needs: iam
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AW_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          audience: ${{ secrets.AWS_STS }}
+          role-session-name: GitHubActions-${{github.run_id}}
+
+      - name: Terraform Format Check Secrets Manager Fast API
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: terraform/production/secret-manager
+
+      - name: Provision Secret manager Initial Setup
+        working-directory: terraform/production/secret-manager
+        run: terraform init -input=false -no-color
+      - name: Provision Secret manager Plan
+        working-directory: terraform/production/secret-manager
+        run: terraform plan -out=tfplan
+      - name: Provision Secret manager Apply
+        working-directory: terraform/production/secret-manager
+        run: terraform apply -auto-approve
+
   ec2-fast-api:
     name: Provisioning EC2 Fast API Infrastructure
     runs-on: ubuntu-latest
@@ -201,20 +238,30 @@ jobs:
       - name: Provision EC2 Self Hosted Runner Initial Setup
         working-directory: terraform/production/ec2-self-hosted
         run: terraform init -input=false -no-color
+
       - name: Provision EC2 Self Hosted Runner Plan
         working-directory: terraform/production/ec2-self-hosted
         run: terraform plan -out=tfplan
-      - name: Debug EC2_TOKEN Secret Presence
+
+      - name: Create runner registration token
+        id: create_token
         run: |
-          if [ -z "${{ secrets.EC2_TOKEN }}" ]; then
-            echo "ERROR: EC2_TOKEN secret is NOT set or is empty!"
+           # Request a repository-level registration token for repo: ngelrojas/fast_api_jwt
+           resp=$(curl -s -XPOST \
+             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+             -H "Accept: application/vnd.github+json" \
+             https://api.github.com/repos/ngelrojas/fast_api_jwt/actions/runners/registration-token)
+           token=$(echo "$resp" | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+           echo "token=$token" >> $GITHUB_OUTPUT
+
+      - name: Debug Generated Token
+        run: |
+          if [ -z "${{ steps.create_token.outputs.token }}" ]; then
+            echo "ERROR: Generated token is NOT set or is empty!"
             exit 1
           else
-            echo "DEBUG: EC2_TOKEN secret is present."
+            echo "DEBUG: Generated token is present and will be used."
           fi
       - name: Provision EC2 Self Hosted Runner Apply
         working-directory: terraform/production/ec2-self-hosted
-        run: terraform apply -auto-approve -var="github_token=${{ secrets.EC2_TOKEN }}"
-
-# .\SCADM1N
-# &![Qt{#nQJG3o&
+        run: terraform apply -auto-approve -var="github_token=${{ steps.create_token.outputs.token }}"

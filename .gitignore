@@ -1,7 +1,23 @@
 .vscode
 .idea
 .env
+.env.*
+!.env.example
 __pycache__/
 */*/__pycache__/
+
+# Terraform
 terraform/**/.terraform/
 terraform/**/.terraform.lock.hcl
+terraform/**/*.tfstate
+terraform/**/*.tfstate.backup
+terraform/**/*.tfplan
+
+# Terragrunt
+**/.terragrunt-cache/
+**/terraform.tfstate.d/
+dependency-graph.png
+
+# AWS
+*.pem
+*.key

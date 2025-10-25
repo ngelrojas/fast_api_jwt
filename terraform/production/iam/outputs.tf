@@ -2,6 +2,10 @@ output "ec2_ssm_role" {
   value = aws_iam_role.ec2_ssm_role
 }
 
+output "ec2_ssm_profile" {
+  value = aws_iam_instance_profile.ec2_ssm_profile
+}
+
 output "self_hosted_runner" {
   value = aws_iam_role.self_hosted_runner
 }

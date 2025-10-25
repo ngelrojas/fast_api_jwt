@@ -5,7 +5,7 @@ resource "aws_sqs_queue" "file_upload_queue" {
   message_retention_seconds  = 86400 # 1 day
   tags = {
     Environment = var.environment
-    Project     = "fast-api-jwt"
-    Purpose     = "file-upload-notifications"
+    Project     = var.file_upload_queue_tag_prj
+    Purpose     = var.file_upload_queue_tag_purpose
   }
 }

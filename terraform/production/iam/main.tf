@@ -19,6 +19,29 @@ resource "aws_iam_role" "ec2_ssm_role" {
   }
 }
 
+resource "aws_iam_role_policy" "ec2_secrets_manager_policy" {
+  name = "ec2-secrets-manager-access"
+  role = aws_iam_role.ec2_ssm_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "arn:aws:secretsmanager:*:*:secret:fast-api-jwt-credentials-*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "ec2_ssm_profile" {
+  name = "${var.ec2_ssm_fast_api}-profile"
+  role = aws_iam_role.ec2_ssm_role.name
+}
+
 resource "aws_iam_role" "self_hosted_runner" {
   name = var.self_hosted_role
   assume_role_policy = jsonencode({
