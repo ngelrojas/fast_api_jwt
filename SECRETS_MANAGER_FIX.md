@@ -29,7 +29,15 @@ Added Secrets Manager permissions to the GitHub Actions OIDC role by:
      - `secretsmanager:DescribeSecret`
      - `secretsmanager:PutSecretValue`
      - `secretsmanager:TagResource`
+     - `secretsmanager:UntagResource`
      - `secretsmanager:ListSecrets`
+     - `secretsmanager:GetResourcePolicy` ⭐ **Critical for reading secret policies**
+     - `secretsmanager:PutResourcePolicy`
+     - `secretsmanager:DeleteResourcePolicy`
+     - `secretsmanager:RestoreSecret`
+     - `secretsmanager:RotateSecret`
+     - `secretsmanager:CancelRotateSecret`
+     - `secretsmanager:ValidateResourcePolicy`
 
 3. **Updated `.github/workflows/ci-infrastructure.yaml`**:
    - The workflow already handles the IAM job which will now apply these new permissions
@@ -72,8 +80,12 @@ The GitHub Actions role now has full Secrets Manager permissions, allowing it to
 - ✅ Delete secrets
 - ✅ Read secret values
 - ✅ Describe secrets
-- ✅ Tag secrets
+- ✅ Tag/Untag secrets
 - ✅ List secrets
+- ✅ **Get/Put/Delete resource policies** (Critical!)
+- ✅ Restore secrets
+- ✅ Rotate secrets
+- ✅ Validate policies
 
 ### Security Considerations
 - The policy uses `Resource = "*"` which means it can manage all secrets in the account
