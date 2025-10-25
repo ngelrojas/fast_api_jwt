@@ -84,3 +84,34 @@ resource "aws_iam_instance_profile" "self_hosted_runner_profile" {
   name = var.self_hosted_role
   role = aws_iam_role.self_hosted_runner.name
 }
+
+# Reference the existing GitHub Actions OIDC role
+data "aws_iam_role" "github_actions_role" {
+  name = var.github_actions_role_name
+}
+
+# Attach Secrets Manager permissions to the GitHub Actions role
+resource "aws_iam_role_policy" "github_actions_secrets_manager" {
+  name = "github-actions-secrets-manager-access"
+  role = data.aws_iam_role.github_actions_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:UpdateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:TagResource",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

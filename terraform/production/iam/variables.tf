@@ -32,3 +32,9 @@ variable "self_hosted_role" {
   type        = string
   default     = "self-hosted-role"
 }
+
+variable "github_actions_role_name" {
+  description = "Name of the existing GitHub Actions OIDC role"
+  type        = string
+  default     = "AwsAngelLLM"
+}
