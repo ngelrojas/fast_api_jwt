@@ -25,3 +25,8 @@ output "self_hosted_runner_role_id" {
 output "self_hosted_runner_profile" {
   value = aws_iam_instance_profile.self_hosted_runner_profile
 }
+
+output "self_hosted_runner_profile_name" {
+  value       = aws_iam_instance_profile.self_hosted_runner_profile.name
+  description = "IAM instance profile name for the self-hosted GitHub Actions runner"
+}

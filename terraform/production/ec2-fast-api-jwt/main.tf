@@ -10,7 +10,7 @@ locals {
 }
 resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
   policy_arn = var.policy_arn
-  role       = var.ec2_ssm_role
+  role       = var.ec2_ssm_role_name
 }
 resource "aws_security_group" "fast_api_jwt_sg" {
   name        = var.fast_api_jwt_sg_name
