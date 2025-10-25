@@ -50,6 +50,12 @@ variable "secret_key" {
   sensitive   = true
 }
 
+variable "algorithm" {
+  description = "Algorithm for JWT encoding"
+  type        = string
+  default     = "HS256"
+}
+
 variable "user_name" {
   description = "Application username"
   type        = string
