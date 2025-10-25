@@ -14,7 +14,7 @@ variable "instance_type" {
 variable "key_name" {
   description = "SSH key name for EC2 instance"
   type        = string
-  default     = "self-hosted-key-github"
+  default     = "self-hosted-role"
 }
 
 variable "vpc_id" {
