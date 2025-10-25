@@ -1,17 +1,28 @@
 data "aws_vpc" "default" {
   default = true
 }
-locals {
-  docker_user_data = templatefile("${path.module}/user_data.sh", {
-    region          = var.aws_region
-    app_data_bucket = var.storage_files_csv
-    secret_name     = var.secret_name
-  })
+
+# Get the latest Ubuntu 22.04 LTS AMI
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
+
 resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
   policy_arn = var.policy_arn
   role       = var.ec2_ssm_role_name
 }
+
 resource "aws_security_group" "fast_api_jwt_sg" {
   name        = var.fast_api_jwt_sg_name
   description = var.fast_api_jwt_sg_description
@@ -31,8 +42,17 @@ resource "aws_security_group" "fast_api_jwt_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+locals {
+  docker_user_data = templatefile("${path.module}/user_data.sh", {
+    region          = var.aws_region
+    app_data_bucket = var.storage_files_csv
+    secret_name     = var.secret_name
+  })
+}
+
 resource "aws_instance" "fast_api_jwt" {
-  ami                  = var.ec2_ami
+  ami                  = data.aws_ami.ubuntu.id
   instance_type        = var.ec2_instance_type
   security_groups      = [aws_security_group.fast_api_jwt_sg.name]
   iam_instance_profile = var.ec2_instance_profile
@@ -55,4 +75,8 @@ resource "aws_instance" "fast_api_jwt" {
     Environment = var.environment
     Project     = var.project_name
   }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.ec2_ssm_policy
+  ]
 }
