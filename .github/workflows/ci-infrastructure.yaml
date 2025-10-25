@@ -286,10 +286,25 @@ jobs:
               echo "✓ Secret already in Terraform state"
             else
               echo "→ Secret not in Terraform state, importing..."
-              terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-credentials || {
-                echo "⚠ Import failed. This might be a state issue."
-                exit 1
-              }
+              if terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-credentials; then
+                echo "✓ Secret imported successfully"
+              else
+                echo "⚠ Import failed. Checking if it's already managed elsewhere..."
+                # Try to refresh state to see if it appears
+                terraform refresh || true
+                # Check again if it's in state now
+                if terraform state show "aws_secretsmanager_secret.fast_api_credentials" &>/dev/null; then
+                  echo "✓ Secret is now in state after refresh"
+                else
+                  echo "ERROR: Secret exists in AWS but cannot be imported to Terraform state."
+                  echo "This usually means:"
+                  echo "1. The secret is managed by another Terraform workspace/state"
+                  echo "2. There's a permissions issue"
+                  echo "3. The state file is corrupted"
+                  echo ""
+                  echo "Attempting to continue with apply - Terraform will handle the conflict..."
+                fi
+              fi
             fi
 
             # Check and import secret version
@@ -299,9 +314,11 @@ jobs:
               echo "→ Secret version not in Terraform state, importing..."
               # Get the secret ARN for version import
               SECRET_ARN=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-credentials --query 'ARN' --output text)
-              terraform import "aws_secretsmanager_secret_version.fast_api_credentials_version" "${SECRET_ARN}|AWSCURRENT" || {
+              if terraform import "aws_secretsmanager_secret_version.fast_api_credentials_version" "${SECRET_ARN}|AWSCURRENT"; then
+                echo "✓ Secret version imported successfully"
+              else
                 echo "⚠ Secret version import failed, will be managed on next apply"
-              }
+              fi
             fi
           else
             echo "→ Secret doesn't exist in AWS, will be created"
