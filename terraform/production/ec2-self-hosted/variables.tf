@@ -18,8 +18,9 @@ variable "key_name" {
 }
 
 variable "vpc_id" {
-  description = "VPC ID for EC2 instance"
+  description = "VPC ID for EC2 instance (uses default VPC if not specified)"
   type        = string
+  default     = ""
 }
 
 variable "github_repo" {
