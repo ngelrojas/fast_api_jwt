@@ -85,6 +85,10 @@ jobs:
             terraform import aws_iam_instance_profile.self_hosted_runner_profile self-hosted-role || echo "⚠ Import failed or resource doesn't exist, will try to create"
           fi
 
+          # Note: GitHub Actions OIDC role data source doesn't need import
+          # The policy attachment for Secrets Manager will be created fresh
+          echo "→ GitHub Actions Secrets Manager policy will be created (no import needed for new policies)"
+
           echo "Import checks completed. Applying changes..."
           terraform apply -auto-approve || (echo "Apply failed, see above for details." && exit 1)
       # Manual rollback: If a resource fails, you can run
@@ -173,19 +177,11 @@ jobs:
 
       - name: Provision S3 Plan
         working-directory: terraform/production/s3-storage
-        run: |
-          # Get SQS queue ARN from AWS
-          SQS_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url $(aws sqs get-queue-url --queue-name file-upload-queue --query 'QueueUrl' --output text) --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
-          echo "SQS Queue ARN: $SQS_QUEUE_ARN"
-          terraform plan -out=tfplan -var="file_upload_queue=$SQS_QUEUE_ARN"
+        run: terraform plan -out=tfplan
 
       - name: Import existing S3 resources if needed and apply
         working-directory: terraform/production/s3-storage
         run: |
-          # Get SQS queue ARN from AWS
-          SQS_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url $(aws sqs get-queue-url --queue-name file-upload-queue --query 'QueueUrl' --output text) --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
-          echo "Using SQS Queue ARN: $SQS_QUEUE_ARN"
-
           echo "Checking for S3 resources that need to be imported..."
 
           # Check and import S3 bucket
@@ -237,7 +233,7 @@ jobs:
           fi
 
           echo "Import checks completed. Applying changes..."
-          terraform apply -auto-approve -var="file_upload_queue=$SQS_QUEUE_ARN"
+          terraform apply -auto-approve
 
   secreter-manager-fast-api:
     name: Provisioning Secrets Manager Fast API Infrastructure
