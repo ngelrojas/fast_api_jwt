@@ -10,6 +10,13 @@ resource "aws_secretsmanager_secret" "fast_api_credentials" {
     Project     = "fast-api-jwt"
     Purpose     = "application-credentials"
   }
+
+  lifecycle {
+    # Prevent accidental deletion of the secret
+    prevent_destroy = false
+    # If secret already exists, import it instead of recreating
+    ignore_changes = []
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "fast_api_credentials_version" {

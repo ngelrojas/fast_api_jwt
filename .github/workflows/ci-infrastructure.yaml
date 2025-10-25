@@ -268,10 +268,22 @@ jobs:
 
       - name: Provision Secret manager Plan
         working-directory: terraform/production/secret-manager
-        run: terraform plan -out=tfplan
+        env:
+          TF_VAR_secret_key: ${{ secrets.JWT_SECRET_KEY }}
+          TF_VAR_algorithm: ${{ secrets.JWT_ALGORITHM }}
+          TF_VAR_user_name: ${{ secrets.APP_USER_NAME }}
+          TF_VAR_password: ${{ secrets.APP_PASSWORD }}
+          TF_VAR_url_base: ${{ secrets.APP_URL_BASE }}
+        run: terraform plan
 
       - name: Import existing Secrets Manager resources if needed and apply
         working-directory: terraform/production/secret-manager
+        env:
+          TF_VAR_secret_key: ${{ secrets.JWT_SECRET_KEY }}
+          TF_VAR_algorithm: ${{ secrets.JWT_ALGORITHM }}
+          TF_VAR_user_name: ${{ secrets.APP_USER_NAME }}
+          TF_VAR_password: ${{ secrets.APP_PASSWORD }}
+          TF_VAR_url_base: ${{ secrets.APP_URL_BASE }}
         run: |
           echo "Checking for Secrets Manager resources that need to be imported..."
 
@@ -325,6 +337,7 @@ jobs:
           fi
 
           echo "Import checks completed. Applying changes..."
+          echo "⚠️  NOTE: Applying without plan file to use current state after imports"
           terraform apply -auto-approve
 
   ec2-fast-api:
