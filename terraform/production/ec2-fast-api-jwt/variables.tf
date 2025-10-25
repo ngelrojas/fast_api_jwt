@@ -44,6 +44,11 @@ variable "ec2_ssm_role" {
   type        = string
   default     = "ec2-ssm-fast-api"
 }
+variable "ec2_ssm_role_name" {
+  description = "EC2 IAM Role name for policy attachment"
+  type        = string
+  default     = "ec2-ssm-fast-api"
+}
 variable "policy_arn" {
   description = "The ARN of the policy to attach to the role"
   type        = string

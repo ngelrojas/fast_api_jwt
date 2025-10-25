@@ -55,7 +55,7 @@ module "ec2-self-hosted" {
   vpc_id                     = data.aws_vpc.default.id
   github_token               = var.github_token
   github_repo                = var.github_repo
-  self_hosted_runner_profile = module.iam.self_hosted_runner_profile.name
+  self_hosted_runner_profile = module.iam.self_hosted_runner_profile_name
   storage_files_csv = {
     bucket = module.s3-storage.storage_files_csv.bucket
     arn    = module.s3-storage.storage_files_csv.arn

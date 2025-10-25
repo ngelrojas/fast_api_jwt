@@ -43,6 +43,7 @@ dependency "secrets" {
 inputs = {
   storage_files_csv    = dependency.s3.outputs.storage_files_csv.bucket
   ec2_ssm_role         = dependency.iam.outputs.ec2_ssm_role
+  ec2_ssm_role_name    = dependency.iam.outputs.ec2_ssm_role.name
   secret_name          = dependency.secrets.outputs.secret_name
   ec2_instance_profile = dependency.iam.outputs.ec2_ssm_profile.name
 }
