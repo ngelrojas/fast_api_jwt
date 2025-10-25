@@ -20,6 +20,7 @@ variable "secret_key" {
   description = "Secret key for JWT encoding"
   type        = string
   sensitive   = true
+  default     = "secret"
 }
 
 variable "algorithm" {
@@ -32,6 +33,7 @@ variable "user_name" {
   description = "Application username"
   type        = string
   sensitive   = true
+  default     = "admin"
 }
 
 variable "password" {
