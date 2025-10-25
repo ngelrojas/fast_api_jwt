@@ -64,6 +64,7 @@ variable "project_name" {
 variable "self_hosted_runner_profile" {
   description = "IAM instance profile for the self-hosted GitHub Actions runner"
   type        = string
+  default     = "self-hosted-role"
 }
 variable "ubuntu_name_aim" {
   description = "aim name for ubuntu AMI"

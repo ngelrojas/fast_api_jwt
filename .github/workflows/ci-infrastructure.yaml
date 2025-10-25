@@ -297,10 +297,10 @@ jobs:
             -var="url_base=$TF_VAR_url_base" || echo "⚠ Refresh failed, continuing..."
 
           # Check if secret exists in AWS first
-          SECRET_EXISTS=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-app-4 2>/dev/null && echo "yes" || echo "no")
+          SECRET_EXISTS=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-app-5 2>/dev/null && echo "yes" || echo "no")
 
           if [ "$SECRET_EXISTS" = "yes" ]; then
-            echo "→ Secret 'fast-api-jwt-app-4' exists in AWS"
+            echo "→ Secret 'fast-api-jwt-app-5' exists in AWS"
 
             # Check if it's in Terraform state
             if terraform state show "aws_secretsmanager_secret.fast_api_credentials" &>/dev/null; then
@@ -312,7 +312,7 @@ jobs:
               terraform state rm aws_secretsmanager_secret_version.fast_api_credentials_version 2>/dev/null || true
 
               # Now import
-              if terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-app-4; then
+              if terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-app-5; then
                 echo "✓ Secret imported successfully"
               else
                 echo "ERROR: Failed to import secret. This might be a state lock issue or permissions problem."
@@ -326,7 +326,7 @@ jobs:
             else
               echo "→ Secret version not in Terraform state, importing..."
               # Get the secret ARN for version import (FIXED: was using wrong secret-id)
-              SECRET_ARN=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-app-4 --query 'ARN' --output text)
+              SECRET_ARN=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-app-5 --query 'ARN' --output text)
               echo "→ Secret ARN: $SECRET_ARN"
               if [ -n "$SECRET_ARN" ] && [ "$SECRET_ARN" != "None" ]; then
                 if terraform import "aws_secretsmanager_secret_version.fast_api_credentials_version" "${SECRET_ARN}|AWSCURRENT"; then
