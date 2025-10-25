@@ -34,7 +34,6 @@ resource "aws_security_group" "fast_api_jwt_sg" {
 resource "aws_instance" "fast_api_jwt" {
   ami                  = var.ec2_ami
   instance_type        = var.ec2_instance_type
-  subnet_id            = ""
   security_groups      = [aws_security_group.fast_api_jwt_sg.name]
   iam_instance_profile = var.ec2_instance_profile
 
