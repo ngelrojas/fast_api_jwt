@@ -1,7 +1,7 @@
 variable "secret_name" {
   description = "Name of the AWS Secrets Manager secret"
   type        = string
-  default     = "fast-api-jwt-app"
+  default     = "fast-api-jwt-app-1"
 }
 
 variable "environment" {
