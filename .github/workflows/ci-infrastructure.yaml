@@ -144,7 +144,7 @@ jobs:
     name: Provisioning S3 Bucket
     runs-on: ubuntu-latest
     environment: prd
-    needs: iam
+    needs: [iam, sqs]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -173,11 +173,19 @@ jobs:
 
       - name: Provision S3 Plan
         working-directory: terraform/production/s3-storage
-        run: terraform plan -out=tfplan
+        run: |
+          # Get SQS queue ARN from AWS
+          SQS_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url $(aws sqs get-queue-url --queue-name file-upload-queue --query 'QueueUrl' --output text) --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+          echo "SQS Queue ARN: $SQS_QUEUE_ARN"
+          terraform plan -out=tfplan -var="file_upload_queue=$SQS_QUEUE_ARN"
 
       - name: Import existing S3 resources if needed and apply
         working-directory: terraform/production/s3-storage
         run: |
+          # Get SQS queue ARN from AWS
+          SQS_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url $(aws sqs get-queue-url --queue-name file-upload-queue --query 'QueueUrl' --output text) --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+          echo "Using SQS Queue ARN: $SQS_QUEUE_ARN"
+
           echo "Checking for S3 resources that need to be imported..."
 
           # Check and import S3 bucket
@@ -220,8 +228,16 @@ jobs:
             terraform import aws_s3_bucket_policy.storage_files_csv_policy storage-files-csv || echo "⚠ Policy import failed"
           fi
 
+          # Check and import S3 bucket notification
+          if terraform state show "aws_s3_bucket_notification.files_csv_notification" &>/dev/null; then
+            echo "✓ S3 bucket notification already in Terraform state"
+          else
+            echo "→ S3 bucket notification not in state, attempting import..."
+            terraform import aws_s3_bucket_notification.files_csv_notification storage-files-csv || echo "⚠ Notification import failed"
+          fi
+
           echo "Import checks completed. Applying changes..."
-          terraform apply -auto-approve
+          terraform apply -auto-approve -var="file_upload_queue=$SQS_QUEUE_ARN"
 
   secreter-manager-fast-api:
     name: Provisioning Secrets Manager Fast API Infrastructure
@@ -356,7 +372,7 @@ jobs:
     name: Provisioning EC2 Self Hosted Runner Infrastructure
     runs-on: ubuntu-latest
     environment: prd
-    needs: iam
+    needs: [iam, secreter-manager-fast-api]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -382,9 +398,6 @@ jobs:
         working-directory: terraform/production/ec2-self-hosted
         run: terraform init -input=false -no-color
 
-      - name: Provision EC2 Self Hosted Runner Plan
-        working-directory: terraform/production/ec2-self-hosted
-        run: terraform plan -out=tfplan
 
       - name: Create runner registration token
         id: create_token
@@ -442,11 +455,31 @@ jobs:
             exit 1
           else
             echo "DEBUG: Token is present (length: ${#TOKEN})"
+            echo "DEBUG: Token first 10 chars: ${TOKEN:0:10}..."
             echo "DEBUG: Token will be passed to Terraform"
           fi
 
+      - name: Provision EC2 Self Hosted Runner Plan
+        working-directory: terraform/production/ec2-self-hosted
+        env:
+          TF_VAR_github_token: ${{ steps.create_token.outputs.token }}
+        run: |
+          TOKEN="${{ steps.create_token.outputs.token }}"
+          echo "DEBUG: Verifying token before plan..."
+          if [ -z "$TOKEN" ]; then
+            echo "ERROR: Token is empty before plan!"
+            exit 1
+          fi
+          echo "DEBUG: Token length: ${#TOKEN}"
+          echo "DEBUG: Token first 10 chars: ${TOKEN:0:10}..."
+          echo "DEBUG: TF_VAR_github_token is set: $([ -n "$TF_VAR_github_token" ] && echo "YES" || echo "NO")"
+          echo "DEBUG: Running terraform plan with github_token variable..."
+          terraform plan -out=tfplan -var="github_token=$TOKEN"
+
       - name: Import existing EC2 Self Hosted Runner resources if needed and apply
         working-directory: terraform/production/ec2-self-hosted
+        env:
+          TF_VAR_github_token: ${{ steps.create_token.outputs.token }}
         run: |
           echo "Checking for EC2 Self Hosted Runner resources that need to be imported..."
 
@@ -478,5 +511,8 @@ jobs:
             fi
           fi
 
+          TOKEN="${{ steps.create_token.outputs.token }}"
           echo "Import checks completed. Applying changes with GitHub token..."
-          terraform apply -auto-approve -var="github_token=${{ steps.create_token.outputs.token }}"
+          echo "DEBUG: Token is set: $([ -n "$TOKEN" ] && echo "YES (length: ${#TOKEN})" || echo "NO")"
+          echo "DEBUG: TF_VAR_github_token is set: $([ -n "$TF_VAR_github_token" ] && echo "YES" || echo "NO")"
+          terraform apply -auto-approve -var="github_token=$TOKEN"
