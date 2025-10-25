@@ -1,3 +1,9 @@
+# Import block for existing secret (Terraform 1.5+)
+import {
+  to = aws_secretsmanager_secret.fast_api_credentials
+  id = var.secret_name
+}
+
 resource "aws_secretsmanager_secret" "fast_api_credentials" {
   name        = var.secret_name
   description = "FastAPI JWT application credentials and configuration"

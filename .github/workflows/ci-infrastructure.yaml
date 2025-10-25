@@ -287,35 +287,36 @@ jobs:
         run: |
           echo "Checking for Secrets Manager resources that need to be imported..."
 
+          # Force refresh state first to get latest
+          echo "→ Refreshing Terraform state..."
+          terraform refresh \
+            -var="secret_key=$TF_VAR_secret_key" \
+            -var="algorithm=$TF_VAR_algorithm" \
+            -var="user_name=$TF_VAR_user_name" \
+            -var="password=$TF_VAR_password" \
+            -var="url_base=$TF_VAR_url_base" || echo "⚠ Refresh failed, continuing..."
+
           # Check if secret exists in AWS first
           SECRET_EXISTS=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-app 2>/dev/null && echo "yes" || echo "no")
 
           if [ "$SECRET_EXISTS" = "yes" ]; then
-            echo "→ Secret exists in AWS"
+            echo "→ Secret 'fast-api-jwt-app' exists in AWS"
 
             # Check if it's in Terraform state
             if terraform state show "aws_secretsmanager_secret.fast_api_credentials" &>/dev/null; then
               echo "✓ Secret already in Terraform state"
             else
               echo "→ Secret not in Terraform state, importing..."
+              # Try to remove it first in case of corrupted state
+              terraform state rm aws_secretsmanager_secret.fast_api_credentials 2>/dev/null || true
+              terraform state rm aws_secretsmanager_secret_version.fast_api_credentials_version 2>/dev/null || true
+
+              # Now import
               if terraform import aws_secretsmanager_secret.fast_api_credentials fast-api-jwt-app; then
                 echo "✓ Secret imported successfully"
               else
-                echo "⚠ Import failed. Checking if it's already managed elsewhere..."
-                # Try to refresh state to see if it appears
-                terraform refresh || true
-                # Check again if it's in state now
-                if terraform state show "aws_secretsmanager_secret.fast_api_credentials" &>/dev/null; then
-                  echo "✓ Secret is now in state after refresh"
-                else
-                  echo "ERROR: Secret exists in AWS but cannot be imported to Terraform state."
-                  echo "This usually means:"
-                  echo "1. The secret is managed by another Terraform workspace/state"
-                  echo "2. There's a permissions issue"
-                  echo "3. The state file is corrupted"
-                  echo ""
-                  echo "Attempting to continue with apply - Terraform will handle the conflict..."
-                fi
+                echo "ERROR: Failed to import secret. This might be a state lock issue or permissions problem."
+                echo "Attempting to continue, but apply may fail..."
               fi
             fi
 
@@ -324,21 +325,32 @@ jobs:
               echo "✓ Secret version already in Terraform state"
             else
               echo "→ Secret version not in Terraform state, importing..."
-              # Get the secret ARN for version import
-              SECRET_ARN=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-credentials --query 'ARN' --output text)
-              if terraform import "aws_secretsmanager_secret_version.fast_api_credentials_version" "${SECRET_ARN}|AWSCURRENT"; then
-                echo "✓ Secret version imported successfully"
+              # Get the secret ARN for version import (FIXED: was using wrong secret-id)
+              SECRET_ARN=$(aws secretsmanager describe-secret --secret-id fast-api-jwt-app --query 'ARN' --output text)
+              echo "→ Secret ARN: $SECRET_ARN"
+              if [ -n "$SECRET_ARN" ] && [ "$SECRET_ARN" != "None" ]; then
+                if terraform import "aws_secretsmanager_secret_version.fast_api_credentials_version" "${SECRET_ARN}|AWSCURRENT"; then
+                  echo "✓ Secret version imported successfully"
+                else
+                  echo "⚠ Secret version import failed, will be managed on next apply"
+                fi
               else
-                echo "⚠ Secret version import failed, will be managed on next apply"
+                echo "⚠ Could not get secret ARN, skipping version import"
               fi
             fi
           else
             echo "→ Secret doesn't exist in AWS, will be created"
           fi
 
+          echo ""
           echo "Import checks completed. Applying changes..."
           echo "⚠️  NOTE: Applying without plan file to use current state after imports"
-          terraform apply -auto-approve
+          terraform apply -auto-approve \
+            -var="secret_key=$TF_VAR_secret_key" \
+            -var="algorithm=$TF_VAR_algorithm" \
+            -var="user_name=$TF_VAR_user_name" \
+            -var="password=$TF_VAR_password" \
+            -var="url_base=$TF_VAR_url_base"
 
   ec2-fast-api:
     name: Provisioning EC2 Fast API Infrastructure
