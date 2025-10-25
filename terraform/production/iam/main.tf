@@ -108,7 +108,15 @@ resource "aws_iam_role_policy" "github_actions_secrets_manager" {
           "secretsmanager:DescribeSecret",
           "secretsmanager:PutSecretValue",
           "secretsmanager:TagResource",
-          "secretsmanager:ListSecrets"
+          "secretsmanager:UntagResource",
+          "secretsmanager:ListSecrets",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:PutResourcePolicy",
+          "secretsmanager:DeleteResourcePolicy",
+          "secretsmanager:RestoreSecret",
+          "secretsmanager:RotateSecret",
+          "secretsmanager:CancelRotateSecret",
+          "secretsmanager:ValidateResourcePolicy"
         ]
         Resource = "*"
       }
